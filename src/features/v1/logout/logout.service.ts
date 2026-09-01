@@ -1,6 +1,7 @@
 import { injectable } from 'inversify';
 import { HTTP_STATUS } from '@/shared-libs/constants/http-status.constant';
-import { default as cache } from '@/shared-libs/utils/cache.util';
+// import { default as cache } from '@/shared-libs/utils/cache.util'; // ponytail: sementara pakai memory-cache (tanpa Redis)
+import { default as cache } from '@/utils/memory-cache.util';
 import { TokenEncryption } from '@/shared-libs/utils/token-encryption.util';
 
 @injectable()

@@ -1,168 +1,164 @@
--- WMS_ServiceUser schema (PostgreSQL)
-CREATE EXTENSION IF NOT EXISTS "pgcrypto";
-
+-- WMS_ServiceUser schema (SQL Server)
 CREATE TABLE "User" (
-  "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  "id" UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
   "email" VARCHAR(100) NOT NULL,
   "name" VARCHAR(100) NOT NULL,
   "phone" VARCHAR(15),
   "provider" VARCHAR(255),
   "asRole" VARCHAR(50),
-  "isActive" BOOLEAN DEFAULT true,
+  "isActive" BIT DEFAULT 1,
   "nrp" VARCHAR(50),
   "password" VARCHAR(200),
   "createdBy" VARCHAR(100),
   "updatedBy" VARCHAR(100),
-  "createdAt" TIMESTAMPTZ NOT NULL DEFAULT now(),
-  "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT now(),
-  "deletedAt" TIMESTAMPTZ,
+  "createdAt" DATETIMEOFFSET NOT NULL DEFAULT SYSDATETIMEOFFSET(),
+  "updatedAt" DATETIMEOFFSET NOT NULL DEFAULT SYSDATETIMEOFFSET(),
+  "deletedAt" DATETIMEOFFSET,
   "deletedBy" VARCHAR(100),
   "token" VARCHAR(200)
 );
 
 CREATE TABLE "Role" (
-  "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  "id" UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
   "name" VARCHAR(50) NOT NULL,
   "description" VARCHAR(100),
   "createdBy" VARCHAR(100) NOT NULL,
   "updatedBy" VARCHAR(100),
-  "createdAt" TIMESTAMPTZ NOT NULL DEFAULT now(),
-  "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT now(),
-  "deletedAt" TIMESTAMPTZ,
+  "createdAt" DATETIMEOFFSET NOT NULL DEFAULT SYSDATETIMEOFFSET(),
+  "updatedAt" DATETIMEOFFSET NOT NULL DEFAULT SYSDATETIMEOFFSET(),
+  "deletedAt" DATETIMEOFFSET,
   "deletedBy" VARCHAR(100)
 );
 
 CREATE TABLE "UserRole" (
-  "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  "userId" UUID NOT NULL REFERENCES "User"("id"),
-  "roleId" UUID NOT NULL REFERENCES "Role"("id"),
-  "createdAt" TIMESTAMPTZ NOT NULL DEFAULT now(),
-  "createdBy" UUID NOT NULL,
-  "deletedAt" TIMESTAMPTZ,
-  "deletedBy" UUID
+  "id" UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+  "userId" UNIQUEIDENTIFIER NOT NULL REFERENCES "User"("id"),
+  "roleId" UNIQUEIDENTIFIER NOT NULL REFERENCES "Role"("id"),
+  "createdAt" DATETIMEOFFSET NOT NULL DEFAULT SYSDATETIMEOFFSET(),
+  "createdBy" UNIQUEIDENTIFIER NOT NULL,
+  "deletedAt" DATETIMEOFFSET,
+  "deletedBy" UNIQUEIDENTIFIER
 );
 
 CREATE TABLE "Menu" (
-  "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  "parentId" UUID REFERENCES "Menu"("id"),
-  "level" INTEGER NOT NULL,
+  "id" UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+  "parentId" UNIQUEIDENTIFIER REFERENCES "Menu"("id"),
+  "level" INT NOT NULL,
   "menu" VARCHAR(50) NOT NULL,
   "url" VARCHAR(50),
   "icon" VARCHAR(50),
-  "order" INTEGER NOT NULL,
-  "isTab" BOOLEAN DEFAULT false,
+  "order" INT NOT NULL,
+  "isTab" BIT DEFAULT 0,
   "menuCode" VARCHAR(50),
   "createdBy" VARCHAR(50),
   "updatedBy" VARCHAR(50),
-  "createdAt" TIMESTAMPTZ NOT NULL DEFAULT now(),
-  "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT now(),
-  "deletedAt" TIMESTAMPTZ,
+  "createdAt" DATETIMEOFFSET NOT NULL DEFAULT SYSDATETIMEOFFSET(),
+  "updatedAt" DATETIMEOFFSET NOT NULL DEFAULT SYSDATETIMEOFFSET(),
+  "deletedAt" DATETIMEOFFSET,
   "deletedBy" VARCHAR(50)
 );
 
 CREATE TABLE "Uam" (
-  "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  "roleId" UUID NOT NULL REFERENCES "Role"("id"),
-  "menuId" UUID NOT NULL REFERENCES "Menu"("id"),
-  "canCreate" BOOLEAN NOT NULL,
-  "canRead" BOOLEAN NOT NULL,
-  "canUpdate" BOOLEAN NOT NULL,
-  "canDelete" BOOLEAN NOT NULL,
-  "canEtc" BOOLEAN NOT NULL,
+  "id" UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+  "roleId" UNIQUEIDENTIFIER NOT NULL REFERENCES "Role"("id"),
+  "menuId" UNIQUEIDENTIFIER NOT NULL REFERENCES "Menu"("id"),
+  "canCreate" BIT NOT NULL,
+  "canRead" BIT NOT NULL,
+  "canUpdate" BIT NOT NULL,
+  "canDelete" BIT NOT NULL,
+  "canEtc" BIT NOT NULL,
   "createdBy" VARCHAR(100) NOT NULL,
   "updatedBy" VARCHAR(100),
-  "createdAt" TIMESTAMPTZ NOT NULL DEFAULT now(),
-  "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT now(),
-  "deletedAt" TIMESTAMPTZ,
+  "createdAt" DATETIMEOFFSET NOT NULL DEFAULT SYSDATETIMEOFFSET(),
+  "updatedAt" DATETIMEOFFSET NOT NULL DEFAULT SYSDATETIMEOFFSET(),
+  "deletedAt" DATETIMEOFFSET,
   "deletedBy" VARCHAR(100)
 );
 
 CREATE TABLE "LoginAttempt" (
-  "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  "id" UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
   "email" VARCHAR(100) NOT NULL,
-  "attemptCount" INTEGER NOT NULL DEFAULT 0,
-  "banExpiresAt" TIMESTAMPTZ,
-  "userId" UUID REFERENCES "User"("id"),
-  "createdBy" UUID NOT NULL REFERENCES "User"("id"),
-  "updatedBy" UUID NOT NULL REFERENCES "User"("id"),
-  "createdAt" TIMESTAMPTZ NOT NULL DEFAULT now(),
-  "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT now()
+  "attemptCount" INT NOT NULL DEFAULT 0,
+  "banExpiresAt" DATETIMEOFFSET,
+  "userId" UNIQUEIDENTIFIER REFERENCES "User"("id"),
+  "createdBy" UNIQUEIDENTIFIER NOT NULL REFERENCES "User"("id"),
+  "updatedBy" UNIQUEIDENTIFIER NOT NULL REFERENCES "User"("id"),
+  "createdAt" DATETIMEOFFSET NOT NULL DEFAULT SYSDATETIMEOFFSET(),
+  "updatedAt" DATETIMEOFFSET NOT NULL DEFAULT SYSDATETIMEOFFSET()
 );
 
 CREATE TABLE "LoginHistory" (
-  "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  "id" UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
   "email" VARCHAR(100) NOT NULL,
   "asRole" VARCHAR(50) NOT NULL,
-  "createdAt" TIMESTAMPTZ NOT NULL DEFAULT now(),
+  "createdAt" DATETIMEOFFSET NOT NULL DEFAULT SYSDATETIMEOFFSET(),
   "createdBy" VARCHAR(100),
-  "userId" UUID NOT NULL
+  "userId" UNIQUEIDENTIFIER NOT NULL
 );
 
 CREATE TABLE "UserRoleBranch" (
-  "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  "userRoleId" UUID NOT NULL REFERENCES "UserRole"("id"),
+  "id" UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+  "userRoleId" UNIQUEIDENTIFIER NOT NULL REFERENCES "UserRole"("id"),
   "branchId" VARCHAR(15) NOT NULL,
-  "createdAt" TIMESTAMPTZ NOT NULL DEFAULT now()
+  "createdAt" DATETIMEOFFSET NOT NULL DEFAULT SYSDATETIMEOFFSET()
 );
 
 CREATE TABLE "UserLoginActivity" (
-  "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  "userId" UUID,
+  "id" UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+  "userId" UNIQUEIDENTIFIER,
   "platform" VARCHAR(255),
   "ipAddress" VARCHAR(40),
   "channel" VARCHAR(10),
-  "createdAt" TIMESTAMPTZ DEFAULT now(),
-  "createdBy" UUID,
+  "createdAt" DATETIMEOFFSET DEFAULT SYSDATETIMEOFFSET(),
+  "createdBy" UNIQUEIDENTIFIER,
   "name" VARCHAR(255),
   "email" VARCHAR(255)
 );
 
 CREATE TABLE "Customer" (
-  "ID" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  "ID" UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
   "Code" VARCHAR(50),
   "Name" VARCHAR(75),
   "Address" VARCHAR(200),
   "Phone" VARCHAR(50),
-  "CreatedAt" TIMESTAMPTZ DEFAULT now(),
+  "CreatedAt" DATETIMEOFFSET DEFAULT SYSDATETIMEOFFSET(),
   "CreatedBy" VARCHAR(100),
-  "UpdatedAt" TIMESTAMPTZ,
+  "UpdatedAt" DATETIMEOFFSET,
   "UpdatedBy" VARCHAR(100),
-  "DeletedAt" TIMESTAMPTZ,
+  "DeletedAt" DATETIMEOFFSET,
   "DeletedBy" VARCHAR(100)
 );
 
 CREATE TABLE "UserRoleWarehouse" (
-  "ID" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  "UserRoleId" UUID REFERENCES "UserRole"("id"),
-  "WarehouseId" UUID,
-  "CreatedAt" TIMESTAMPTZ DEFAULT now(),
+  "ID" UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+  "UserRoleId" UNIQUEIDENTIFIER REFERENCES "UserRole"("id"),
+  "WarehouseId" UNIQUEIDENTIFIER,
+  "CreatedAt" DATETIMEOFFSET DEFAULT SYSDATETIMEOFFSET(),
   "CreatedBy" VARCHAR(100),
-  "UpdatedAt" TIMESTAMPTZ,
+  "UpdatedAt" DATETIMEOFFSET,
   "UpdatedBy" VARCHAR(100),
-  "DeletedAt" TIMESTAMPTZ,
+  "DeletedAt" DATETIMEOFFSET,
   "DeletedBy" VARCHAR(100)
 );
 
 CREATE TABLE "Warehouse" (
-  "ID" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  "CustomerId" UUID REFERENCES "Customer"("ID"),
+  "ID" UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+  "CustomerId" UNIQUEIDENTIFIER REFERENCES "Customer"("ID"),
   "Code" VARCHAR(50),
   "Name" VARCHAR(75),
   "Address" VARCHAR(200),
   "Phone" VARCHAR(50),
-  "CreatedAt" TIMESTAMPTZ DEFAULT now(),
+  "CreatedAt" DATETIMEOFFSET DEFAULT SYSDATETIMEOFFSET(),
   "CreatedBy" VARCHAR(100),
-  "UpdatedAt" TIMESTAMPTZ,
+  "UpdatedAt" DATETIMEOFFSET,
   "UpdatedBy" VARCHAR(100),
-  "DeletedAt" TIMESTAMPTZ,
+  "DeletedAt" DATETIMEOFFSET,
   "DeletedBy" VARCHAR(100)
 );
 
-DO $$ BEGIN
-  ALTER TABLE "UserRoleWarehouse"
-    ADD CONSTRAINT "UserRoleWarehouse_WarehouseId_fkey"
-    FOREIGN KEY ("WarehouseId") REFERENCES "Warehouse"("ID");
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+ALTER TABLE "UserRoleWarehouse"
+  ADD CONSTRAINT "UserRoleWarehouse_WarehouseId_fkey"
+  FOREIGN KEY ("WarehouseId") REFERENCES "Warehouse"("ID");
 
 CREATE INDEX idx_user_email ON "User"("email");
 CREATE INDEX idx_user_deleted ON "User"("deletedAt");
