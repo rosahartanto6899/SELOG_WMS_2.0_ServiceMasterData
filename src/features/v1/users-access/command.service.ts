@@ -6,7 +6,8 @@ import {
   BadRequestException,
   NotFoundException,
 } from '@/shared-libs/exceptions';
-import { default as cache } from '@/shared-libs/utils/cache.util';
+// import { default as cache } from '@/shared-libs/utils/cache.util'; // ponytail: sementara pakai memory-cache (tanpa Redis)
+import { default as cache } from '@/utils/memory-cache.util';
 import {
   MenuRepository,
   RoleRepository,

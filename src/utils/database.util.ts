@@ -7,7 +7,7 @@ export const sequelize: Sequelize = new Sequelize(
   `${SecretManager.env.SQL_PASSWORD_USER}`,
   {
     host: `${SecretManager.env.SQL_HOST}`,
-    dialect: 'postgres',
+    dialect: 'mssql',
     timezone: '+07:00',
     pool: {
       max: 200,
