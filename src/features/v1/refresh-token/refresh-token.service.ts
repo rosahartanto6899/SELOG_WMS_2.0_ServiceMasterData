@@ -5,7 +5,8 @@ import {
   UnauthorizedException,
   ForbiddenException,
 } from '@/shared-libs/exceptions';
-import { default as cache } from '@/shared-libs/utils/cache.util';
+// import { default as cache } from '@/shared-libs/utils/cache.util'; // ponytail: sementara pakai memory-cache (tanpa Redis)
+import { default as cache } from '@/utils/memory-cache.util';
 import { default as SecretManager } from '@/shared-libs/utils/secret-manager.util';
 import { TokenEncryption } from '@/shared-libs/utils/token-encryption.util';
 import { UserRepository } from './repositories';
@@ -38,13 +39,19 @@ export class RefreshTokenService {
   }
 
   private validateToken(blaklistRefreshToken: string) {
-    const decode = jwt.verify(
-      blaklistRefreshToken,
-      SecretManager.env.JWT_SECRET
-    ) as {
-      sub: string;
-      type: string;
-    };
+    let decode: any;
+    try {
+      decode = jwt.verify(
+        blaklistRefreshToken,
+        SecretManager.env.JWT_SECRET
+      ) as {
+        sub: string;
+        type: string;
+      };
+    } catch {
+      // missing/malformed/expired/bad-signature token = auth failure, not 500
+      throw new UnauthorizedException('Unauthorized');
+    }
 
     if (decode.type == 'access') {
       throw new ForbiddenException('Forbidden');

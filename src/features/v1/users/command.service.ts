@@ -1,7 +1,8 @@
 import { injectable, inject } from 'inversify';
 import { BadRequestException, ForbiddenException } from '@/shared-libs/exceptions';
 import { HTTP_STATUS } from '@/shared-libs/constants/http-status.constant';
-import { default as cache } from '@/shared-libs/utils/cache.util';
+// import { default as cache } from '@/shared-libs/utils/cache.util'; // ponytail: sementara pakai memory-cache (tanpa Redis)
+import { default as cache } from '@/utils/memory-cache.util';
 import {
   IDataUser,
   IDataUserRole,

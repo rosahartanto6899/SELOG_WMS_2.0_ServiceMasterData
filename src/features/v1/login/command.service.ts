@@ -8,7 +8,8 @@ import {
   NotFoundException,
 } from '@/shared-libs/exceptions';
 import { AzureAdThird } from '@/integrations/thrid-party/azure-ad.third';
-import { default as cache } from '@/shared-libs/utils/cache.util';
+// import { default as cache } from '@/shared-libs/utils/cache.util'; // ponytail: sementara pakai memory-cache (tanpa Redis)
+import { default as cache } from '@/utils/memory-cache.util';
 import { default as SecretManager } from '@/shared-libs/utils/secret-manager.util';
 import { TokenEncryption } from '@/shared-libs/utils/token-encryption.util';
 import { sequelize } from '@/utils/database.util';
