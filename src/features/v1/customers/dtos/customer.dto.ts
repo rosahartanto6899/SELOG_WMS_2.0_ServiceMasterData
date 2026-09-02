@@ -31,17 +31,17 @@ export class CreateCustomerDto {
 }
 
 export class UpdateCustomerDto {
-  @IsOptional()
   @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
-  @IsString()
+  @IsNotEmpty()
   @MaxLength(50)
-  code?: string;
-
-  @IsOptional()
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   @IsString()
+  code: string;
+
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @IsNotEmpty()
   @MaxLength(75)
-  name?: string;
+  @IsString()
+  name: string;
 
   @IsOptional()
   @IsString()
