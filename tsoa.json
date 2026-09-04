@@ -2,7 +2,7 @@
   "entryFile": "src/server.ts",
   "noImplicitAdditionalProperties": "throw-on-extras",
   "spec": {
-    "name": "Trac Drive Web API User Service",
+    "name": "LOGis Web API Order Service",
     "outputDirectory": "public",
     "specVersion": 3,
     "specFileBaseName": "swagger"

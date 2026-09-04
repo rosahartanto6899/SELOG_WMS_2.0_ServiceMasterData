@@ -1,7 +1,7 @@
 ###################
 # BUILD
 ###################
-FROM node:20-slim AS build
+FROM node:22-slim AS build
 
 # Install required packages for native modules (canvas)
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -32,7 +32,7 @@ RUN npm ci --ignore-scripts --audit=false && \
 # DEPLOY
 ###################
 
-FROM node:20-slim AS deploy
+FROM node:22-slim AS deploy
 
 # Install runtime dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -46,19 +46,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 ENV TZ=Asia/Jakarta
 
 # Create a non-root user
-RUN adduser --disabled-password --gecos "" --uid 1001 appuser
+RUN adduser --disabled-password --gecos "" --uid 1001 appuserlogis
 
 WORKDIR /app
 
 # Copy files from build stage with correct ownership and read-only permissions
-COPY --from=build --chown=appuser:appuser --chmod=555 /app/node_modules ./node_modules
-COPY --from=build --chown=appuser:appuser --chmod=555 /app/dist ./dist
-COPY --from=build --chown=appuser:appuser --chmod=444 /app/package*.json ./
-COPY --from=build --chown=appuser:appuser --chmod=444 /app/tsconfig*.json ./
-COPY --from=build --chown=appuser:appuser --chmod=400 /app/.env ./.env
-COPY --from=build --chown=appuser:appuser --chmod=555 /app/tsconfig-paths-bootstrap.js ./
+COPY --from=build --chown=appuserlogis:appuserlogis --chmod=555 /app/node_modules ./node_modules
+COPY --from=build --chown=appuserlogis:appuserlogis --chmod=555 /app/dist ./dist
+COPY --from=build --chown=appuserlogis:appuserlogis --chmod=444 /app/package*.json ./
+COPY --from=build --chown=appuserlogis:appuserlogis --chmod=444 /app/tsconfig*.json ./
+COPY --from=build --chown=appuserlogis:appuserlogis --chmod=400 /app/.env ./.env
+COPY --from=build --chown=appuserlogis:appuserlogis --chmod=555 /app/tsconfig-paths-bootstrap.js ./
 
-USER appuser
+USER appuserlogis
 
 EXPOSE 3000
 EXPOSE 8080

@@ -14,8 +14,9 @@ import {
   VerifyJWT,
   ResponseJson,
   validateDataMiddleware,
-  JsonValidationMiddleware,
+  AuthorizeBranchScope,
 } from '@/shared-libs/middlewares';
+import { databaseManager } from './utils';
 
 moment.tz.setDefault('Asia/Jakarta');
 
@@ -26,29 +27,34 @@ export async function Bootstrap() {
     app.use(
       bodyParser.urlencoded({
         extended: true,
-      })
+      }),
     );
     app.use(bodyParser.json());
     app.use(helmet());
     app.use(cors());
     app.use(VerifyJWT);
     app.use(validateDataMiddleware);
+    app.use(AuthorizeBranchScope());
     app.use(ResponseJson);
     app.use(morgan('dev'));
   });
 
   server.setErrorConfig((app) => {
-    app.use(JsonValidationMiddleware);
     app.use(HandlerException);
   });
 
   const serverInstance = server.build();
 
+  // Initialize database connections
+  console.log('Initializing database connections...');
+  await databaseManager.connect();
+  console.log('Database connections established');
+
   await retry(
     async (bail) => {
       try {
-        console.log(`server running port: ${process.env.PORT || 3000}`);
-        serverInstance.listen(process.env.PORT || 3000);
+        console.log(`server running port: ${process.env?.PORT ?? 3000}`);
+        serverInstance.listen(process.env?.PORT ?? 3000);
       } catch (err) {
         if (err instanceof Error) {
           bail(err);
@@ -60,6 +66,6 @@ export async function Bootstrap() {
     {
       retries: 10,
       minTimeout: 5000,
-    }
+    },
   ).catch((error) => console.log(error));
 }
