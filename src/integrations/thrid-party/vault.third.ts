@@ -6,7 +6,7 @@ import * as path from 'path';
 export class VaultClient {
   private readonly vaultClient: any = {};
   public env: { [key: string]: any } = {};
-  private _vaultUrl = process.env.VAULT_URL ?? '';
+  private readonly _vaultUrl = process.env.VAULT_URL ?? '';
 
   async getSecret(): Promise<void> {
     try {
@@ -41,7 +41,6 @@ export class VaultClient {
           }
         );
         const globalEnvData = globalEnv.data.data.data;
-
         this.env = { ...this.env, ...globalEnvData };
       } else {
         const envConfig = dotenv.parse(
@@ -49,7 +48,7 @@ export class VaultClient {
         );
         for (const key in envConfig) {
           if (envConfig.hasOwnProperty(key)) {
-            this.env[key] = process.env[key];
+            this.env[key] = process.env[key] ?? envConfig[key];
           }
         }
       }

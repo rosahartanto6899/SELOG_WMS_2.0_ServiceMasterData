@@ -8,11 +8,10 @@
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true, 
     "module": "commonjs", 
-    "rootDir": "./src", 
-    "baseUrl": "./src",
+    "rootDir": "./src",
     "paths": {
-      "@/*": ["*"]
-    },                                   
+      "@/*": ["./src/*"]
+    },
     "outDir": "./dist", 
     "esModuleInterop": true, 
     "forceConsistentCasingInFileNames": true, 
@@ -29,7 +28,8 @@
     "src"
   ],
   "exclude": [
-    "node_modules", 
-    "dist"
+    "node_modules",
+    "dist",
+    "src/tests"
   ]
 }
