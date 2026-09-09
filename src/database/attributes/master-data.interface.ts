@@ -42,6 +42,20 @@ export interface MstLocationAttributes {
   deletedDate?: Date | null;
 }
 
+export interface MstUoMAttributes {
+  id?: string;
+  uoM?: string;
+  name?: string;
+  description?: string | null;
+  ordinal?: number;
+  createdDate?: Date;
+  createdBy?: string | null;
+  modifiedDate?: Date | null;
+  modifiedBy?: string | null;
+  deletedBy?: string | null;
+  deletedDate?: Date | null;
+}
+
 export interface MstMaterialAttributes {
   id?: string;
   customerCode?: string | null;

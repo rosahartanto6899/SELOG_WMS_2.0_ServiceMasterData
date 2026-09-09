@@ -3,9 +3,10 @@ import { FindOptions, Transaction, WhereOptions } from 'sequelize';
 import {
   MstMaterial,
   MstMaterialLocationMapping,
+  MstUoM,
 } from '@/database/entities';
 import { customerScope } from '@/utils';
-import { MstMaterialAttributes } from '@/database/attributes';
+import { MstMaterialAttributes, MstUoMAttributes } from '@/database/attributes';
 
 @injectable()
 export class MaterialRepository {
@@ -71,5 +72,15 @@ export class MaterialRepository {
     transaction?: Transaction,
   ) {
     await MstMaterial.update(data, { where: { id }, transaction });
+  }
+
+  /** Dropdown UoM (MstUoM) — aktif saja, diurutkan berdasarkan Ordinal. */
+  public async findAllUom(): Promise<MstUoMAttributes[]> {
+    const results = await MstUoM.findAll({
+      where: { deletedDate: null },
+      order: [['ordinal', 'ASC']],
+      attributes: ['id', 'uoM', 'name', 'ordinal'],
+    });
+    return results.map((r) => r.get({ plain: true }));
   }
 }

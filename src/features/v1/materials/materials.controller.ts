@@ -153,6 +153,32 @@ export class MaterialsController extends BaseHttpController {
 
   /**
    * @swagger
+   * /v1/materials/uom-dropdown:
+   *   get:
+   *     summary: Get UoM list (MstUoM) for dropdown, ordered by Ordinal
+   *     tags: [Materials]
+   *     security:
+   *       - bearerAuth: []
+   *       - api_key: []
+   *     responses:
+   *       200:
+   *         description: Successfully retrieved UoM dropdown
+   *       401:
+   *         description: Unauthorized
+   */
+  @ValidatePermissions({
+    allowedMenuPermissions: [{ menuCode: cst.menuCode, action: 'CREATE' }],
+  })
+  @httpGet(
+    '/uom-dropdown',
+    MaterialsController.materialsLogging.custom('uom-dropdown'),
+  )
+  async uomDropdown() {
+    return await this.queryService.uomDropdown();
+  }
+
+  /**
+   * @swagger
    * /v1/materials/barcode-labels:
    *   post:
    *     summary: Render UPCA barcode labels (SVG data-uri) for printing

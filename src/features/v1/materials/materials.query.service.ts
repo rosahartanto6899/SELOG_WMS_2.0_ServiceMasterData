@@ -30,8 +30,8 @@ export class MaterialsQueryService {
     const page = query.page ?? 1;
     const limit = query.limit ?? 10;
     const order: [string, string] = [
-      query.order ?? 'code',
-      (query.sort ?? 'asc') as 'asc' | 'desc',
+      query.order ?? 'createdDate',
+      (query.sort ?? 'desc') as 'asc' | 'desc',
     ];
 
     const { rows, count } = await this.repository.findAndCountAll(
@@ -71,6 +71,17 @@ export class MaterialsQueryService {
 
   async availableBarcodes() {
     const data = await this.upcaRepository.findAvailable('isMaterialUsed');
+    return { data, httpCode: 200 };
+  }
+
+  /** Dropdown UoM (MstUoM) untuk field UoM di form Material — label "UoM (Name)". */
+  async uomDropdown() {
+    const rows = await this.repository.findAllUom();
+    const data = rows.map((r) => ({
+      uoM: r.uoM,
+      name: r.name,
+      label: `${r.uoM} (${r.name})`,
+    }));
     return { data, httpCode: 200 };
   }
 
