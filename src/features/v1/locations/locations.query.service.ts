@@ -37,8 +37,8 @@ export class LocationsQueryService {
     const page = query.page ?? 1;
     const limit = query.limit ?? 10;
     const order: [string, string] = [
-      query.order ?? 'code',
-      (query.sort ?? 'asc') as 'asc' | 'desc',
+      query.order ?? 'createdDate',
+      (query.sort ?? 'desc') as 'asc' | 'desc',
     ];
 
     const { rows, count } = await this.repository.findAndCountAll(
