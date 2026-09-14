@@ -16,25 +16,19 @@ export class RedisCache {
 
     // Creating Redis connection only if it does not exist
     if (!RedisCache.redis) {
-      const redisTls = SecretManager.env.REDIS_TLS === 'true';
       RedisCache.redis = new Redis({
         host: redisHost,
         port: redisPort,
         db: redisDb,
         // username: redisUsername, // Will be undefined if not provided
         password: redisPassword, // Will be undefined if not provided
-        // ponytail: TLS only when REDIS_TLS=true — local redis has no TLS
-        ...(redisTls ? { tls: { rejectUnauthorized: false } } : {}),
+        // ponytail: Azure Cache (6380) requires TLS; local plaintext Redis does not
+        tls: redisPort === 6380 ? { rejectUnauthorized: false } : undefined,
       });
     }
 
     RedisCache.redis.on('error', (err) => {
       console.error('Redis error:', err);
-    });
-
-    // Log successful connection
-    RedisCache.redis.on('ready', () => {
-      console.log('Redis connected successfully');
     });
 
     return RedisCache.redis;
@@ -57,20 +51,7 @@ export class RedisCache {
   async get<T>(key: string): Promise<T | null> {
     const redis = RedisCache.getInstance();
     const cachedValue = await redis.get(key);
-
-    if (!cachedValue) {
-      return null;
-    }
-
-    try {
-      return JSON.parse(cachedValue) as T;
-    } catch (error) {
-      console.error(`Failed to parse JSON from Redis key "${key}":`, error);
-      console.error('Raw value:', cachedValue);
-      // Optionally delete the corrupted cache entry
-      await this.delete(key);
-      return null;
-    }
+    return cachedValue ? (JSON.parse(cachedValue) as T) : null;
   }
 
   // Delete a key from Redis
