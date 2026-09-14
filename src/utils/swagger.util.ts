@@ -50,20 +50,17 @@ function createSwaggerOptions(): swaggerJsdoc.Options {
     definition: {
       openapi: SWAGGER_CONFIG.OPENAPI_VERSION,
       info: {
-        title: `WMS Service User Documentation - ${SecretManager.env.NODE_ENV}`,
+        title: `LOGis Web API Service Order Documentation - ${SecretManager.env.NODE_ENV}`,
         version: SWAGGER_CONFIG.API_VERSION,
       },
       servers: [{ url: SecretManager.env.BASE_URL }],
+      'x-amazon-apigateway-binary-media-types': ['multipart/form-data'],
       components: {
         securitySchemes: {
           bearerAuth: {
             type: 'http',
             scheme: 'bearer',
             bearerFormat: 'JWT',
-          },
-          basicAuth: {
-            type: 'http',
-            scheme: 'basic',
           },
           api_key: {
             type: 'apiKey',
