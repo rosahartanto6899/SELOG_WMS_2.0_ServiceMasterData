@@ -248,6 +248,40 @@ export class MaterialsController extends BaseHttpController {
 
   /**
    * @swagger
+   * /v1/materials/internal/by-code/{code}:
+   *   get:
+   *     summary: Lookup material by code (internal service-to-service, basic auth)
+   *     tags: [Materials]
+   *     security:
+   *       - basicAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: code
+   *         required: true
+   *         schema: { type: string }
+   *       - in: query
+   *         name: customerCode
+   *         schema: { type: string }
+   *         description: Scope customer aktif (opsional)
+   *     responses:
+   *       200:
+   *         description: Material record (data null jika tidak ditemukan)
+   *       401:
+   *         description: Unauthorized
+   */
+  @httpGet(
+    '/internal/by-code/:code',
+    MaterialsController.materialsLogging.custom('internal-by-code'),
+  )
+  async internalByCode(@request() req: Request) {
+    return await this.queryService.internalByCode(
+      (req.params as any).code,
+      (req.query as any).customerCode,
+    );
+  }
+
+  /**
+   * @swagger
    * /v1/materials:
    *   post:
    *     summary: Create a new material record

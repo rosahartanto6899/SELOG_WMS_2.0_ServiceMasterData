@@ -61,6 +61,16 @@ export class MaterialsQueryService {
     return { data, httpCode: 200 };
   }
 
+  /** Lookup material by code — dipakai service lain (InventoryStock, basic auth).
+   *  customerCode optional via query; tanpa itu = tanpa scope customer. */
+  async internalByCode(code: string, customerCode?: string) {
+    const material = await this.repository.getByCode(customerCode, code);
+    return {
+      data: material ? material.get({ plain: true }) : null,
+      httpCode: 200,
+    };
+  }
+
   async detail(id: string) {
     const material = await this.repository.getById(id);
     return {
