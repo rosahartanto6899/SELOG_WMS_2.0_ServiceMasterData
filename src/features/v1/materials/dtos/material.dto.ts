@@ -5,7 +5,9 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
+  IsUUID,
   Matches,
+  Max,
   MaxLength,
   Min,
 } from 'class-validator';
@@ -111,10 +113,15 @@ export class ListMaterialQueryDto {
   @IsOptional() @IsIn(cst.searchByFields) searchBy?: string;
   @IsOptional() @IsIn(cst.orderFields) order?: string;
   @IsOptional() @IsIn(['asc', 'desc']) sort?: string;
-  @IsOptional() @Type(() => Number) @IsInt() @Min(1) page?: number;
-  @IsOptional() @Type(() => Number) @IsInt() @Min(1) limit?: number;
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(100) page?: number;
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(100) limit?: number;
+}
+
+export class MaterialDropdownQueryDto {
+  @IsOptional() @IsString() customerCode?: string;
 }
 
 export class MaterialIdParamDto {
-  @IsNotEmpty() @IsString() id: string;
+  // kolom DB uniqueidentifier — id non-UUID bikin MSSQL conversion error (500), bukan 404/422
+  @IsUUID() id: string;
 }

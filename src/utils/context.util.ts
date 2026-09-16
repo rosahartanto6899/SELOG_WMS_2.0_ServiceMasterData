@@ -23,6 +23,35 @@ export function customerScope(customerCode?: string): {
   return customerCode ? { customerCode } : {};
 }
 
+/** Konteks gudang aktif dari token user (header "Switch Warehouse" FE).
+ *  Token tanpa klaim warehouse (mis. admin) → undefined → query tidak difilter. */
+export function warehouseContext(req: Request): {
+  warehouseCode?: string;
+  warehouseName?: string;
+} {
+  const user = req.user as unknown as IDataUser;
+  return {
+    warehouseCode: user?.tokenWarehouseCode || undefined,
+    warehouseName: user?.tokenWarehouseName ?? '-',
+  };
+}
+
+/** Resolve scope customer — klaim token MENANG; token tanpa klaim (admin)
+ *  boleh pakai query param. Mencegah user biasa menimpa scope via ?customerCode=. */
+export function scopedCustomerCode(
+  req: Request,
+  queryCustomerCode?: string,
+): string | undefined {
+  const { customerCode } = customerContext(req);
+  return customerCode ?? queryCustomerCode;
+}
+
+/** Ambil query DTO — req.query sudah diganti instance DTO oleh QueryValidation.
+ *  Satu titik cast eksplisit (ParsedQs → DTO) untuk semua controller. */
+export function queryDto<T>(req: Request): T {
+  return req.query as unknown as T;
+}
+
 /** User audit — pengganti UserLogin/DisplayName SP lama. */
 export function userBy(req: Request): string {
   const user = req.user as unknown as IDataUser;

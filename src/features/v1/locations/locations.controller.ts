@@ -8,7 +8,10 @@ import {
   httpPost,
   httpPut,
   request,
+  requestBody,
+  requestParam,
 } from 'inversify-express-utils';
+import { queryDto } from '@/utils';
 import { BodyValidation, ParamValidation, QueryValidation } from '@/shared-libs/base';
 import {
   ControllerLogging,
@@ -20,6 +23,7 @@ import {
   BarcodeLabelsBodyDto,
   CreateLocationDto,
   ListLocationQueryDto,
+  LocationDropdownQueryDto,
   LocationIdParamDto,
   UpdateLocationDto,
 } from './dtos/location.dto';
@@ -36,7 +40,7 @@ import { LocationsQueryService } from './locations.query.service';
 export class LocationsController extends BaseHttpController {
   private static readonly locationsLogging = ControllerLogging.forEntity(
     'locations',
-    MICROSERVICE_IDENTIFIERS.SERVICE_ORDER,
+    MICROSERVICE_IDENTIFIERS.SERVICE_MASTER_DATA,
   );
 
   constructor(
@@ -52,20 +56,12 @@ export class LocationsController extends BaseHttpController {
    * @swagger
    * /v1/locations:
    *   get:
-   *     summary: Get all location records (paginated)
+   *     summary: Get all location records (paginated, scoped by token customer & active warehouse)
    *     tags: [Locations]
    *     security:
    *       - bearerAuth: []
    *       - api_key: []
    *     parameters:
-   *       - in: query
-   *         name: customerCode
-   *         schema: { type: string }
-   *         description: Filter by customer code
-   *       - in: query
-   *         name: warehouseCode
-   *         schema: { type: string }
-   *         description: Filter by warehouse code
    *       - in: query
    *         name: zoneId
    *         schema: { type: string, format: uuid }
@@ -92,8 +88,8 @@ export class LocationsController extends BaseHttpController {
    *         description: Page number for pagination
    *       - in: query
    *         name: limit
-   *         schema: { type: integer, minimum: 1 }
-   *         description: Number of records per page
+   *         schema: { type: integer, minimum: 1, maximum: 100 }
+   *         description: Number of records per page (max 100)
    *     responses:
    *       200:
    *         description: Successfully retrieved location records
@@ -105,7 +101,7 @@ export class LocationsController extends BaseHttpController {
   })
   @httpGet('/', QueryValidation(ListLocationQueryDto), LocationsController.locationsLogging.list)
   async list(@request() req: Request) {
-    return await this.queryService.list(req.query as ListLocationQueryDto, req);
+    return await this.queryService.list(queryDto<ListLocationQueryDto>(req), req);
   }
 
   /**
@@ -126,16 +122,20 @@ export class LocationsController extends BaseHttpController {
   @ValidatePermissions({
     allowedMenuPermissions: [{ menuCode: cst.menuCode, action: 'READ' }],
   })
-  @httpGet('/dropdown', LocationsController.locationsLogging.dropdown)
+  @httpGet(
+    '/dropdown',
+    QueryValidation(LocationDropdownQueryDto),
+    LocationsController.locationsLogging.dropdown,
+  )
   async dropdown(@request() req: Request) {
-    return await this.queryService.dropdown(req.query as any, req);
+    return await this.queryService.dropdown(queryDto<LocationDropdownQueryDto>(req), req);
   }
 
   /**
    * @swagger
    * /v1/locations/available-barcodes:
    *   get:
-   *     summary: Get available UPCA barcodes from the pool
+   *     summary: Get available UPCA barcodes from the pool (up to 200)
    *     tags: [Locations]
    *     security:
    *       - bearerAuth: []
@@ -187,8 +187,8 @@ export class LocationsController extends BaseHttpController {
     BodyValidation(BarcodeLabelsBodyDto),
     LocationsController.locationsLogging.custom('barcode-labels'),
   )
-  async barcodeLabels(@request() req: Request) {
-    return await this.queryService.barcodeLabels(req.body as BarcodeLabelsBodyDto);
+  async barcodeLabels(@requestBody() body: BarcodeLabelsBodyDto) {
+    return await this.queryService.barcodeLabels(body);
   }
 
   /**
@@ -209,8 +209,8 @@ export class LocationsController extends BaseHttpController {
    *     responses:
    *       200:
    *         description: Successfully retrieved location record
-   *       400:
-   *         description: Invalid ID format or record not found
+   *       404:
+   *         description: Location record not found
    *       401:
    *         description: Unauthorized
    */
@@ -222,8 +222,8 @@ export class LocationsController extends BaseHttpController {
     ParamValidation(LocationIdParamDto),
     LocationsController.locationsLogging.view,
   )
-  async detail(@request() req: Request) {
-    return await this.queryService.detail((req.params as any).id);
+  async detail(@requestParam('id') id: string) {
+    return await this.queryService.detail(id);
   }
 
   /**
@@ -258,15 +258,15 @@ export class LocationsController extends BaseHttpController {
     BodyValidation(CreateLocationDto),
     LocationsController.locationsLogging.create,
   )
-  async create(@request() req: Request) {
-    return await this.commandService.create(req.body as CreateLocationDto, req);
+  async create(@requestBody() dto: CreateLocationDto, @request() req: Request) {
+    return await this.commandService.create(dto, req);
   }
 
   /**
    * @swagger
    * /v1/locations/{id}:
    *   put:
-   *     summary: Update location record by ID (code immutable)
+   *     summary: Update location record by ID (code immutable; optional fields omitted are unchanged)
    *     tags: [Locations]
    *     security:
    *       - bearerAuth: []
@@ -285,8 +285,8 @@ export class LocationsController extends BaseHttpController {
    *     responses:
    *       200:
    *         description: Location updated successfully
-   *       400:
-   *         description: Invalid request payload or record not found
+   *       404:
+   *         description: Location record not found
    *       401:
    *         description: Unauthorized
    *       422:
@@ -301,12 +301,12 @@ export class LocationsController extends BaseHttpController {
     BodyValidation(UpdateLocationDto),
     LocationsController.locationsLogging.update,
   )
-  async update(@request() req: Request) {
-    return await this.commandService.update(
-      (req.params as any).id,
-      req.body as UpdateLocationDto,
-      req,
-    );
+  async update(
+    @requestParam('id') id: string,
+    @requestBody() dto: UpdateLocationDto,
+    @request() req: Request,
+  ) {
+    return await this.commandService.update(id, dto, req);
   }
 
   /**
@@ -327,7 +327,7 @@ export class LocationsController extends BaseHttpController {
    *     responses:
    *       200:
    *         description: Location deleted successfully
-   *       400:
+   *       404:
    *         description: Record not found
    *       401:
    *         description: Unauthorized
@@ -340,7 +340,7 @@ export class LocationsController extends BaseHttpController {
     ParamValidation(LocationIdParamDto),
     LocationsController.locationsLogging.delete,
   )
-  async remove(@request() req: Request) {
-    return await this.commandService.delete((req.params as any).id, req);
+  async remove(@requestParam('id') id: string, @request() req: Request) {
+    return await this.commandService.delete(id, req);
   }
 }

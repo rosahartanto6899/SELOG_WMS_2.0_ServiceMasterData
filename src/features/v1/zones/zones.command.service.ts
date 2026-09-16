@@ -3,10 +3,11 @@ import { Request } from 'express';
 import { Transaction } from 'sequelize';
 import { HTTP_STATUS } from '@/shared-libs/constants/http-status.constant';
 import {
+  BadRequestException,
   NotFoundException,
   UnprocessableEntityException,
 } from '@/shared-libs/exceptions';
-import { nowWib, customerContext, userBy } from '@/utils';
+import { nowWib, customerContext, userBy, warehouseContext } from '@/utils';
 import { sequelize } from '@/utils';
 import { zoneConstant as cst } from './constants/zone.constant';
 import { ZoneRepository } from './repositories/zone.repository';
@@ -23,11 +24,16 @@ export class ZonesCommandService {
   async create(dto: CreateZoneDto, req: Request): Promise<{ data: null; httpCode: number }> {
     const ctx = customerContext(req);
     const user = userBy(req);
+    const { warehouseCode, warehouseName } = warehouseContext(req);
+    // zone milik gudang — tanpa konteks warehouse aktif, row jadi sampah
+    if (!warehouseCode) {
+      throw new BadRequestException('Active warehouse context is required (Switch Warehouse)');
+    }
 
     await sequelize.transaction(async (transaction: Transaction) => {
       const existing = await this.repository.findByCode(
         ctx.customerCode,
-        dto.warehouseCode,
+        warehouseCode,
         dto.code,
         transaction,
         true,
@@ -40,8 +46,8 @@ export class ZonesCommandService {
       await this.repository.create(
         {
           ...ctx,
-          warehouseCode: dto.warehouseCode,
-          warehouseName: dto.warehouseName,
+          warehouseCode,
+          warehouseName,
           code: dto.code,
           name: dto.name,
           description: dto.description,

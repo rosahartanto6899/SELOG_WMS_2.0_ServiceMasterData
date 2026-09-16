@@ -8,7 +8,10 @@ import {
   httpPost,
   httpPut,
   request,
+  requestBody,
+  requestParam,
 } from 'inversify-express-utils';
+import { queryDto } from '@/utils';
 import { BodyValidation, ParamValidation, QueryValidation } from '@/shared-libs/base';
 import {
   ControllerLogging,
@@ -35,7 +38,7 @@ import { ZonesQueryService } from './zones.query.service';
 export class ZonesController extends BaseHttpController {
   private static readonly zonesLogging = ControllerLogging.forEntity(
     'zones',
-    MICROSERVICE_IDENTIFIERS.SERVICE_ORDER,
+    MICROSERVICE_IDENTIFIERS.SERVICE_MASTER_DATA,
   );
 
   constructor(
@@ -59,11 +62,7 @@ export class ZonesController extends BaseHttpController {
    *       - in: query
    *         name: customerCode
    *         schema: { type: string }
-   *         description: Filter by customer code
-   *       - in: query
-   *         name: warehouseCode
-   *         schema: { type: string }
-   *         description: Filter by warehouse code
+   *         description: Filter by customer code (admin only — token claim takes precedence; warehouse scope is token-only)
    *       - in: query
    *         name: search
    *         schema: { type: string }
@@ -86,8 +85,8 @@ export class ZonesController extends BaseHttpController {
    *         description: Page number for pagination
    *       - in: query
    *         name: limit
-   *         schema: { type: integer, minimum: 1 }
-   *         description: Number of records per page
+   *         schema: { type: integer, minimum: 1, maximum: 100 }
+   *         description: Number of records per page (max 100)
    *     responses:
    *       200:
    *         description: Successfully retrieved zone records
@@ -101,7 +100,7 @@ export class ZonesController extends BaseHttpController {
   })
   @httpGet('/', QueryValidation(ListZoneQueryDto), ZonesController.zonesLogging.list)
   async list(@request() req: Request) {
-    return await this.queryService.list(req.query as ListZoneQueryDto, req);
+    return await this.queryService.list(queryDto<ListZoneQueryDto>(req), req);
   }
 
   /**
@@ -124,7 +123,7 @@ export class ZonesController extends BaseHttpController {
   })
   @httpGet('/dropdown', ZonesController.zonesLogging.custom('dropdown'))
   async dropdown(@request() req: Request) {
-    return await this.queryService.dropdown(req.query as any, req);
+    return await this.queryService.dropdown(req);
   }
 
   /**
@@ -145,8 +144,8 @@ export class ZonesController extends BaseHttpController {
    *     responses:
    *       200:
    *         description: Successfully retrieved zone record
-   *       400:
-   *         description: Invalid ID format or record not found
+   *       404:
+   *         description: Zone record not found
    *       401:
    *         description: Unauthorized
    */
@@ -154,8 +153,8 @@ export class ZonesController extends BaseHttpController {
     allowedMenuPermissions: [{ menuCode: cst.menuCode, action: 'READ' }],
   })
   @httpGet('/:id', ParamValidation(ZoneIdParamDto), ZonesController.zonesLogging.view)
-  async detail(@request() req: Request) {
-    return await this.queryService.detail((req.params as any).id);
+  async detail(@requestParam('id') id: string) {
+    return await this.queryService.detail(id);
   }
 
   /**
@@ -186,15 +185,15 @@ export class ZonesController extends BaseHttpController {
     allowedMenuPermissions: [{ menuCode: cst.menuCode, action: 'CREATE' }],
   })
   @httpPost('/', BodyValidation(CreateZoneDto), ZonesController.zonesLogging.create)
-  async create(@request() req: Request) {
-    return await this.commandService.create(req.body as CreateZoneDto, req);
+  async create(@requestBody() dto: CreateZoneDto, @request() req: Request) {
+    return await this.commandService.create(dto, req);
   }
 
   /**
    * @swagger
    * /v1/zones/{id}:
    *   put:
-   *     summary: Update zone record by ID (code immutable)
+   *     summary: Update zone record by ID (code immutable; optional fields omitted are unchanged)
    *     tags: [Zones]
    *     security:
    *       - bearerAuth: []
@@ -213,8 +212,8 @@ export class ZonesController extends BaseHttpController {
    *     responses:
    *       200:
    *         description: Zone updated successfully
-   *       400:
-   *         description: Invalid request payload or record not found
+   *       404:
+   *         description: Zone record not found
    *       401:
    *         description: Unauthorized
    *       422:
@@ -229,12 +228,12 @@ export class ZonesController extends BaseHttpController {
     BodyValidation(UpdateZoneDto),
     ZonesController.zonesLogging.update,
   )
-  async update(@request() req: Request) {
-    return await this.commandService.update(
-      (req.params as any).id,
-      req.body as UpdateZoneDto,
-      req,
-    );
+  async update(
+    @requestParam('id') id: string,
+    @requestBody() dto: UpdateZoneDto,
+    @request() req: Request,
+  ) {
+    return await this.commandService.update(id, dto, req);
   }
 
   /**
@@ -255,7 +254,7 @@ export class ZonesController extends BaseHttpController {
    *     responses:
    *       200:
    *         description: Zone deleted successfully
-   *       400:
+   *       404:
    *         description: Record not found
    *       401:
    *         description: Unauthorized
@@ -266,7 +265,7 @@ export class ZonesController extends BaseHttpController {
     allowedMenuPermissions: [{ menuCode: cst.menuCode, action: 'DELETE' }],
   })
   @httpDelete('/:id', ParamValidation(ZoneIdParamDto), ZonesController.zonesLogging.delete)
-  async remove(@request() req: Request) {
-    return await this.commandService.delete((req.params as any).id, req);
+  async remove(@requestParam('id') id: string, @request() req: Request) {
+    return await this.commandService.delete(id, req);
   }
 }

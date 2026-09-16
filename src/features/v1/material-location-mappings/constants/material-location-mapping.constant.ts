@@ -49,8 +49,6 @@ export const materialLocationMappingConstant = {
     { header: 'Location Name', key: 'locationName', width: 35, refSheet: 'Ref_location' },
   ] as MappingColumn[],
 
-  exampleRow: ['(pilih dari dropdown)', '', '', '(pilih dari dropdown)'],
-
   key: {
     materialCode: 'materialCode',
     locationName: 'locationName',

@@ -1,5 +1,5 @@
 import { injectable } from 'inversify';
-import { FindOptions, Transaction, WhereOptions } from 'sequelize';
+import { FindOptions, OrderItem, Transaction, WhereOptions } from 'sequelize';
 import { customerScope } from '@/utils';
 import { MstMaterialLocationMapping } from '@/database/entities';
 import { MstMaterialLocationMappingAttributes } from '@/database/attributes';
@@ -8,7 +8,7 @@ import { MstMaterialLocationMappingAttributes } from '@/database/attributes';
 export class MaterialLocationMappingRepository {
   public async findAndCountAll(
     where: WhereOptions,
-    order: [string, string][],
+    order: OrderItem[],
     offset: number,
     limit: number,
   ) {
