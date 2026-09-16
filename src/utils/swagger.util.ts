@@ -33,7 +33,8 @@ interface SwaggerIntegration {
 // Utility functions
 async function initializeSecrets(): Promise<void> {
   const vaultPath = process.env.VAULT_PATH;
-  if (!vaultPath) {
+  // ponytail: VAULT_PATH hanya relevan saat IS_VAULT aktif; tanpa itu, SecretManager baca .env
+  if (process.env.IS_VAULT && !vaultPath) {
     throw new Error('VAULT_PATH environment variable is not set');
   }
 
@@ -50,7 +51,7 @@ function createSwaggerOptions(): swaggerJsdoc.Options {
     definition: {
       openapi: SWAGGER_CONFIG.OPENAPI_VERSION,
       info: {
-        title: `LOGis Web API Service Order Documentation - ${SecretManager.env.NODE_ENV}`,
+        title: `WMS Web API Service MasterData Documentation - ${SecretManager.env.NODE_ENV}`,
         version: SWAGGER_CONFIG.API_VERSION,
       },
       servers: [{ url: SecretManager.env.BASE_URL }],
@@ -236,8 +237,8 @@ function processEndpointMethod(
 function processSwaggerPaths(swaggerDocs: any): void {
   const optionsMethod = createOptionsMethod();
 
-  Object.entries(swaggerDocs.paths).forEach(
-    ([path, endpoint]: [string, SwaggerPath]) => {
+  Object.entries(swaggerDocs.paths as Record<string, SwaggerPath>).forEach(
+    ([path, endpoint]) => {
       endpoint.options = optionsMethod;
 
       const pathParams = extractPathParameters(path);

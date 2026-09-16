@@ -1,5 +1,5 @@
 import { injectable } from 'inversify';
-import { FindOptions, Op, Transaction, WhereOptions } from 'sequelize';
+import { FindOptions, Op, OrderItem, Transaction, WhereOptions } from 'sequelize';
 import { customerScope } from '@/utils';
 import {
   MstLocation,
@@ -12,7 +12,7 @@ import { MstLocationAttributes } from '@/database/attributes';
 export class LocationRepository {
   public async findAndCountAll(
     where: WhereOptions,
-    order: [string, string][],
+    order: OrderItem[],
     offset: number,
     limit: number,
   ) {
@@ -33,12 +33,13 @@ export class LocationRepository {
 
   public async findAllActive(
     customerCode: string | undefined,
-    warehouseCode: string,
+    warehouseCode: string | undefined,
     zoneId?: string,
   ): Promise<MstLocationAttributes[]> {
+    // warehouseCode undefined = admin belum pilih warehouse → jangan filter (bukan error 500)
     const where: WhereOptions = {
       ...customerScope(customerCode),
-      warehouseCode,
+      ...(warehouseCode ? { warehouseCode } : {}),
       isActive: true,
       deletedDate: null,
     };
@@ -119,15 +120,18 @@ export class UpcaBarcodeRepository {
     return results.map((r) => r.get({ plain: true }));
   }
 
+  /** Tandai barcode terpakai — atomic: hanya match jika flag masih NULL.
+   *  Return jumlah row ter-update (0 = barcode tidak ada di pool / sudah dipakai). */
   public async markUsed(
     barcode: string,
     usedFlag: 'isLocationUsed' | 'isMaterialUsed',
     modifiedBy: string,
     transaction?: Transaction,
-  ) {
-    await MstUpcaBarcode.update(
+  ): Promise<number> {
+    const [affected] = await MstUpcaBarcode.update(
       { [usedFlag]: true, modifiedBy, modifiedDate: new Date() },
-      { where: { barcode }, transaction },
+      { where: { barcode, [usedFlag]: null }, transaction },
     );
+    return affected ?? 0;
   }
 }

@@ -2,8 +2,7 @@ import { injectable } from 'inversify';
 import { Request, Response } from 'express';
 import { Workbook } from 'exceljs';
 import { MstLocation, MstMaterial } from '@/database/entities';
-import { customerContext, customerScope } from '@/utils';
-import { HTTP_STATUS } from '@/shared-libs/constants/http-status.constant';
+import { customerContext, customerScope, warehouseContext } from '@/utils';
 import { BadRequestException } from '@/shared-libs/exceptions';
 import { materialLocationMappingConstant as cst } from './constants/material-location-mapping.constant';
 
@@ -15,15 +14,15 @@ import { materialLocationMappingConstant as cst } from './constants/material-loc
  */
 @injectable()
 export class ExcelTemplateService {
-  async generateTemplate(req: Request, res: Response) {
+  async generateTemplate(req: Request, res: Response): Promise<void> {
     const { columns } = cst;
-    const ctx = customerContext(req);
-    const warehouseCode = String(req.query.warehouseCode ?? '');
+    const { customerCode } = customerContext(req);
+    const { warehouseCode } = warehouseContext(req);
 
     // === Ambil master live untuk dropdown ===
     const materials = (
       await MstMaterial.findAll({
-        where: { ...customerScope(ctx.customerCode), isActive: true, deletedDate: null },
+        where: { ...customerScope(customerCode), isActive: true, deletedDate: null },
         order: [['code', 'ASC']],
         attributes: ['id', 'code', 'name'],
         limit: 5000,
@@ -32,7 +31,7 @@ export class ExcelTemplateService {
 
     const locations = (
       await MstLocation.findAll({
-        where: { ...customerScope(ctx.customerCode), warehouseCode, isActive: true, deletedDate: null },
+        where: { ...customerScope(customerCode), warehouseCode, isActive: true, deletedDate: null },
         order: [['name', 'ASC']],
         attributes: ['id', 'name'],
         limit: 5000,
@@ -131,7 +130,5 @@ export class ExcelTemplateService {
       cst.stringHeaderValueFilename,
     );
     res.end(buffer);
-
-    return { data: null, httpCode: HTTP_STATUS.OK };
   }
 }

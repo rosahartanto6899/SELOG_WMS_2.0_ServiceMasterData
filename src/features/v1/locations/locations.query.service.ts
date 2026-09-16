@@ -1,9 +1,16 @@
 import { inject, injectable } from 'inversify';
 import { Request } from 'express';
 import { Op, WhereOptions } from 'sequelize';
-import { customerContext, customerScope } from '@/utils';
-import { upcaToDataUri } from '@/utils';
-import { ListLocationQueryDto, BarcodeLabelsBodyDto } from './dtos/location.dto';
+import { NotFoundException } from '@/shared-libs/exceptions';
+import {
+  customerContext,
+  customerScope,
+  likeTerm,
+  upcaToDataUri,
+  warehouseContext,
+} from '@/utils';
+import { locationConstant as cst } from './constants/location.constant';
+import { ListLocationQueryDto, LocationDropdownQueryDto, BarcodeLabelsBodyDto } from './dtos/location.dto';
 import {
   LocationRepository,
   UpcaBarcodeRepository,
@@ -19,19 +26,18 @@ export class LocationsQueryService {
   ) {}
 
   async list(query: ListLocationQueryDto, req: Request) {
+    // customer & warehouse diambil dari token (aktif), BUKAN query FE
     const { customerCode } = customerContext(req);
+    const { warehouseCode } = warehouseContext(req);
     const where: WhereOptions = {
-      ...customerScope(query.customerCode ?? customerCode),
+      ...customerScope(customerCode),
+      ...(warehouseCode ? { warehouseCode } : {}),
       deletedDate: null,
       isActive: true,
     };
-    if (query.warehouseCode)
-      where.warehouseCode = {
-        [Op.in]: query.warehouseCode.split(',').filter(Boolean),
-      };
     if (query.zoneId) where.zoneId = query.zoneId;
     if (query.search && query.searchBy) {
-      where[query.searchBy] = { [Op.like]: `%${query.search}%` };
+      Object.assign(where, { [query.searchBy]: { [Op.like]: likeTerm(query.search) } });
     }
 
     const page = query.page ?? 1;
@@ -65,14 +71,13 @@ export class LocationsQueryService {
     };
   }
 
-  async dropdown(
-    query: { customerCode?: string; warehouseCode?: string; zoneId?: string },
-    req: Request,
-  ) {
+  async dropdown(query: LocationDropdownQueryDto, req: Request) {
+    // customer & warehouse diambil dari token (aktif), BUKAN query FE
     const { customerCode } = customerContext(req);
+    const { warehouseCode } = warehouseContext(req);
     const data = await this.repository.findAllActive(
-      query.customerCode ?? customerCode,
-      query.warehouseCode ?? '',
+      customerCode,
+      warehouseCode,
       query.zoneId,
     );
     return { data, httpCode: 200 };
@@ -80,11 +85,10 @@ export class LocationsQueryService {
 
   async detail(id: string) {
     const location = await this.repository.getById(id);
-    const plain = location ? (location.get({ plain: true }) as any) : null;
-    if (plain) {
-      plain.zoneName = plain?.zone?.name ?? null;
-      delete plain.zone;
-    }
+    if (!location) throw new NotFoundException(cst.messages.notFound);
+    const plain = location.get({ plain: true }) as any;
+    plain.zoneName = plain?.zone?.name ?? null;
+    delete plain.zone;
     return { data: plain, httpCode: 200 };
   }
 

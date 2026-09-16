@@ -1,5 +1,5 @@
 import { injectable } from 'inversify';
-import { FindOptions, Transaction, WhereOptions } from 'sequelize';
+import { FindOptions, OrderItem, Transaction, WhereOptions } from 'sequelize';
 import { customerScope } from '@/utils';
 import { MstLocation, MstZone } from '@/database/entities';
 import { MstZoneAttributes } from '@/database/attributes';
@@ -8,7 +8,7 @@ import { MstZoneAttributes } from '@/database/attributes';
 export class ZoneRepository {
   public async findAndCountAll(
     where: WhereOptions,
-    order: [string, string][],
+    order: OrderItem[],
     offset: number,
     limit: number,
   ) {
@@ -17,12 +17,13 @@ export class ZoneRepository {
 
   public async findAllActive(
     customerCode: string | undefined,
-    warehouseCode: string,
+    warehouseCode: string | undefined,
   ): Promise<MstZoneAttributes[]> {
+    // warehouseCode undefined = admin belum pilih warehouse → jangan filter (bukan error 500)
     const results = await MstZone.findAll({
       where: {
         ...customerScope(customerCode),
-        warehouseCode,
+        ...(warehouseCode ? { warehouseCode } : {}),
         isActive: true,
         deletedDate: null,
       },

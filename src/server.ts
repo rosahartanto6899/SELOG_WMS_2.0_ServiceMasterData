@@ -4,7 +4,6 @@ import cors from 'cors';
 import morgan from 'morgan';
 import helmet from 'helmet';
 import retry from 'async-retry';
-import moment from 'moment-timezone';
 import compression from 'compression';
 import * as bodyParser from 'body-parser';
 import { container } from '@/shared-libs/utils';
@@ -17,8 +16,6 @@ import {
   AuthorizeBranchScope,
 } from '@/shared-libs/middlewares';
 import { databaseManager } from './utils';
-
-moment.tz.setDefault('Asia/Jakarta');
 
 export async function Bootstrap() {
   const server = new InversifyExpressServer(container);

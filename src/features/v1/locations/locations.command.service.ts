@@ -3,11 +3,12 @@ import { Request } from 'express';
 import { Transaction } from 'sequelize';
 import { HTTP_STATUS } from '@/shared-libs/constants/http-status.constant';
 import {
+  BadRequestException,
   NotFoundException,
   UnprocessableEntityException,
 } from '@/shared-libs/exceptions';
 import { MstZone } from '@/database/entities';
-import { nowWib, customerContext, userBy } from '@/utils';
+import { nowWib, customerContext, userBy, warehouseContext } from '@/utils';
 import { sequelize } from '@/utils';
 import { locationConstant as cst } from './constants/location.constant';
 import {
@@ -15,6 +16,8 @@ import {
   UpcaBarcodeRepository,
 } from './repositories/location.repository';
 import { CreateLocationDto, UpdateLocationDto } from './dtos/location.dto';
+
+type CollectedErrors = { field: string; message: string[] }[];
 
 @injectable()
 export class LocationsCommandService {
@@ -31,12 +34,17 @@ export class LocationsCommandService {
   ): Promise<{ data: null; httpCode: number }> {
     const ctx = customerContext(req);
     const user = userBy(req);
+    const { warehouseCode, warehouseName } = warehouseContext(req);
+    // location milik gudang — tanpa konteks warehouse aktif, row jadi sampah
+    if (!warehouseCode) {
+      throw new BadRequestException('Active warehouse context is required (Switch Warehouse)');
+    }
 
     await sequelize.transaction(async (transaction: Transaction) => {
-      const errors = [];
+      const errors: CollectedErrors = [];
       const dup = await this.repository.findByCode(
         ctx.customerCode,
-        dto.warehouseCode,
+        warehouseCode,
         dto.code,
         transaction,
         true,
@@ -45,7 +53,12 @@ export class LocationsCommandService {
         errors.push({ field: cst.key.code, message: [cst.messages.codeExists] });
 
       const zone = await MstZone.findOne({
-        where: { id: dto.zoneId, isActive: true, deletedDate: null },
+        where: {
+          id: dto.zoneId,
+          warehouseCode,
+          isActive: true,
+          deletedDate: null,
+        },
         transaction,
       });
       if (!zone)
@@ -56,11 +69,11 @@ export class LocationsCommandService {
       await this.repository.create(
         {
           ...ctx,
-          warehouseCode: dto.warehouseCode,
+          warehouseCode,
           warehouseName:
-            dto.warehouseName ??
-            (zone.get({ plain: true }) as any)?.warehouseName ??
-            '-',
+            warehouseName !== '-'
+              ? warehouseName
+              : ((zone!.get({ plain: true }) as any)?.warehouseName ?? '-'),
           code: dto.code,
           name: dto.name,
           barcode: dto.barcode,
@@ -74,13 +87,17 @@ export class LocationsCommandService {
         transaction,
       );
 
-      // paritas SP lama: tandai barcode terpakai di pool UPCA
-      await this.upcaRepository.markUsed(
+      // paritas SP lama: barcode harus tersedia di pool UPCA (atomic, anti-race)
+      const marked = await this.upcaRepository.markUsed(
         dto.barcode,
         'isLocationUsed',
         user,
         transaction,
       );
+      if (!marked)
+        throw new UnprocessableEntityException([
+          { field: cst.key.barcode, message: [cst.messages.barcodeNotAvailable] },
+        ]);
     });
 
     return { data: null, httpCode: HTTP_STATUS.CREATED };
@@ -98,7 +115,12 @@ export class LocationsCommandService {
       if (!location) throw new NotFoundException(cst.messages.notFound);
 
       const zone = await MstZone.findOne({
-        where: { id: dto.zoneId, isActive: true, deletedDate: null },
+        where: {
+          id: dto.zoneId,
+          warehouseCode: (location.get({ plain: true }) as any).warehouseCode,
+          isActive: true,
+          deletedDate: null,
+        },
         transaction,
       });
       if (!zone)

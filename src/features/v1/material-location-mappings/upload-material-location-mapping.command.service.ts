@@ -2,9 +2,9 @@ import { inject, injectable } from 'inversify';
 import { Request } from 'express';
 import { Transaction } from 'sequelize';
 import { HTTP_STATUS } from '@/shared-libs/constants/http-status.constant';
-import { UnprocessableEntityException } from '@/shared-libs/exceptions';
+import { BadRequestException, UnprocessableEntityException } from '@/shared-libs/exceptions';
 import { MstLocation, MstMaterial } from '@/database/entities';
-import { nowWib, customerContext, userBy } from '@/utils';
+import { nowWib, customerContext, userBy, warehouseContext } from '@/utils';
 import { sequelize } from '@/utils';
 import { materialLocationMappingConstant as cst } from './constants/material-location-mapping.constant';
 import { UpsertMaterialLocationMappingDto } from './dtos/material-location-mapping.dto';
@@ -24,12 +24,18 @@ export class UploadMaterialLocationMappingCommandService {
     private readonly repository: MaterialLocationMappingRepository,
   ) {}
 
-  async upsertBulk(
-    dto: UpsertMaterialLocationMappingDto & { warehouseCode?: string; warehouseName?: string },
+  async upsert(
+    dto: UpsertMaterialLocationMappingDto,
     req: Request,
   ): Promise<{ data: null; httpCode: number }> {
     const ctx = customerContext(req);
+    const wh = warehouseContext(req);
     const user = userBy(req);
+    const warehouseCode = wh.warehouseCode;
+    // mapping butuh konteks gudang aktif — tanpa itu natural key tidak bermakna
+    if (!warehouseCode) {
+      throw new BadRequestException('Active warehouse context is required (Switch Warehouse)');
+    }
     let isCreate = true;
 
     await sequelize.transaction(async (transaction: Transaction) => {
@@ -51,10 +57,12 @@ export class UploadMaterialLocationMappingCommandService {
           message: [cst.messages.materialNotFound],
         });
 
-      // match location per warehouse (paritas lama: Name + WarehouseCode)
+      // match location per customer + warehouse (paritas lama: Name + WarehouseCode;
+      // scope customer supaya tidak salah-bind location customer lain)
       const location = await MstLocation.findOne({
         where: {
-          warehouseCode: dto.warehouseCode,
+          customerCode: ctx.customerCode,
+          warehouseCode,
           name: dto.locationName,
           isActive: true,
           deletedDate: null,
@@ -74,7 +82,7 @@ export class UploadMaterialLocationMappingCommandService {
 
       const existing = await this.repository.getByNaturalKey(
         ctx.customerCode,
-        dto.warehouseCode!,
+        warehouseCode,
         materialId,
         transaction,
         true,
@@ -96,8 +104,8 @@ export class UploadMaterialLocationMappingCommandService {
           {
             customerCode: ctx.customerCode,
             customerName: ctx.customerName,
-            warehouseCode: dto.warehouseCode!,
-            warehouseName: dto.warehouseName ?? locationPlain.warehouseName ?? '-',
+            warehouseCode,
+            warehouseName: wh.warehouseName !== '-' ? wh.warehouseName : locationPlain.warehouseName ?? '-',
             materialId,
             locationId: locationPlain.id,
             isActive: true,

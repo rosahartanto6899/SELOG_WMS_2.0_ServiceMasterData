@@ -1,7 +1,15 @@
 import { inject, injectable } from 'inversify';
 import { Request } from 'express';
 import { Op, WhereOptions } from 'sequelize';
-import { customerContext, customerScope } from '@/utils';
+import { NotFoundException } from '@/shared-libs/exceptions';
+import {
+  customerContext,
+  customerScope,
+  likeTerm,
+  scopedCustomerCode,
+  warehouseContext,
+} from '@/utils';
+import { zoneConstant as cst } from './constants/zone.constant';
 import { ListZoneQueryDto } from './dtos/zone.dto';
 import { ZoneRepository } from './repositories/zone.repository';
 
@@ -12,18 +20,17 @@ export class ZonesQueryService {
   ) {}
 
   async list(query: ListZoneQueryDto, req: Request) {
-    const { customerCode } = customerContext(req);
+    // scope customer: klaim token MENANG; admin tanpa klaim boleh pakai query param.
+    // Warehouse tetap murni dari token (aktif), BUKAN query FE.
+    const { warehouseCode } = warehouseContext(req);
     const where: WhereOptions = {
-      ...customerScope(query.customerCode ?? customerCode),
+      ...customerScope(scopedCustomerCode(req, query.customerCode)),
+      ...(warehouseCode ? { warehouseCode } : {}),
       deletedDate: null,
       isActive: true,
     };
-    if (query.warehouseCode)
-      where.warehouseCode = {
-        [Op.in]: query.warehouseCode.split(',').filter(Boolean),
-      };
     if (query.search && query.searchBy) {
-      where[query.searchBy] = { [Op.like]: `%${query.search}%` };
+      Object.assign(where, { [query.searchBy]: { [Op.like]: likeTerm(query.search) } });
     }
 
     const page = query.page ?? 1;
@@ -52,20 +59,20 @@ export class ZonesQueryService {
     };
   }
 
-  async dropdown(
-    query: { customerCode?: string; warehouseCode?: string },
-    req: Request,
-  ) {
+  async dropdown(req: Request) {
+    // scope murni dari token aktif (Switch Warehouse) — bukan dari query param
     const { customerCode } = customerContext(req);
+    const { warehouseCode } = warehouseContext(req);
     const data = await this.repository.findAllActive(
-      query.customerCode ?? customerCode,
-      query.warehouseCode ?? '',
+      customerCode,
+      warehouseCode,
     );
     return { data, httpCode: 200 };
   }
 
   async detail(id: string) {
     const zone = await this.repository.getById(id);
-    return { data: zone ? zone.get({ plain: true }) : null, httpCode: 200 };
+    if (!zone) throw new NotFoundException(cst.messages.notFound);
+    return { data: zone.get({ plain: true }), httpCode: 200 };
   }
 }

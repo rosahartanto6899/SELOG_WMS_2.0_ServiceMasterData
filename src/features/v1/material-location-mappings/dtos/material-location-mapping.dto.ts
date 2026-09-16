@@ -6,6 +6,7 @@ import {
   IsOptional,
   IsString,
   Matches,
+  Max,
   MaxLength,
   Min,
 } from 'class-validator';
@@ -19,10 +20,8 @@ const alnumPattern = '^[a-zA-Z0-9\\[\\]\\(\\)\\-\\/\\#\\&\\+,.!? ]*$';
  *   schemas:
  *     UpsertMaterialLocationMappingDto:
  *       type: object
- *       required: [warehouseCode, materialCode, locationName]
+ *       required: [materialCode, locationName]
  *       properties:
- *         warehouseCode: { type: string, maxLength: 50, example: "WH001" }
- *         warehouseName: { type: string, maxLength: 100 }
  *         materialCode: { type: string, maxLength: 100, example: "MAT001" }
  *         locationName: { type: string, maxLength: 100, example: "Rack A-01" }
  *         materialName: { type: string, maxLength: 200 }
@@ -32,14 +31,6 @@ const alnumPattern = '^[a-zA-Z0-9\\[\\]\\(\\)\\-\\/\\#\\&\\+,.!? ]*$';
  *         upsertReason: { type: string, maxLength: 200, description: FE row tracker (unused by BE) }
  */
 export class UpsertMaterialLocationMappingDto {
-  // Wajib — service match location & natural key per warehouse
-  @IsNotEmpty()
-  @IsString()
-  @MaxLength(50)
-  warehouseCode: string;
-
-  @IsOptional() @IsString() @MaxLength(100) warehouseName?: string;
-
   @IsNotEmpty()
   @IsString()
   @MaxLength(100)
@@ -63,11 +54,10 @@ export class UpsertMaterialLocationMappingDto {
 
 export class ListMappingQueryDto {
   @IsOptional() @IsString() customerCode?: string;
-  @IsOptional() @IsString() warehouseCode?: string;
   @IsOptional() @IsString() search?: string;
   @IsOptional() @IsIn(cst.searchByFields) searchBy?: string;
   @IsOptional() @IsIn(cst.orderFields) order?: string;
   @IsOptional() @IsIn(['asc', 'desc']) sort?: string;
-  @IsOptional() @Type(() => Number) @IsInt() @Min(1) page?: number;
-  @IsOptional() @Type(() => Number) @IsInt() @Min(1) limit?: number;
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(100) page?: number;
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(100) limit?: number;
 }

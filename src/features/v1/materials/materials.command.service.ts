@@ -58,13 +58,17 @@ export class MaterialsCommandService {
         transaction,
       );
 
-      // paritas SP lama: tandai barcode terpakai di pool UPCA
-      await this.upcaRepository.markUsed(
+      // paritas SP lama: barcode harus tersedia di pool UPCA (atomic, anti-race)
+      const marked = await this.upcaRepository.markUsed(
         dto.barcode,
         'isMaterialUsed',
         user,
         transaction,
       );
+      if (!marked)
+        throw new UnprocessableEntityException([
+          { field: cst.key.barcode, message: [cst.messages.barcodeNotAvailable] },
+        ]);
     });
 
     return { data: null, httpCode: HTTP_STATUS.CREATED };

@@ -1,23 +1,24 @@
 {
-  "name": "selog-logis-serviceorder",
+  "name": "selog-wms-servicemasterdata",
   "version": "1.0.0",
-  "description": "SELOG LOGIS Service Order",
+  "description": "SELOG WMS Service MasterData",
   "main": "dist/server.js",
   "scripts": {
     "clean": "rimraf dist public",
     "tsc": "tsc -p ./tsconfig.json",
     "build": "npm-run-all clean tsc && tsc-alias",
-    "serve": "node -r ./tsconfig-paths-bootstrap.js --max-http-header-size=65536 dist/app.js",
+    "serve": "node -r ./tsconfig-paths-bootstrap.js dist/app.js",
     "start": "npm-run-all serve",
-    "start:dev": "NODE_OPTIONS=--max-http-header-size=65536 nodemon -r tsconfig-paths/register src/app.ts",
+    "start:dev": "NODE_OPTIONS=nodemon -r tsconfig-paths/register src/app.ts",
     "lint": "tslint '*.ts'",
     "test": "mocha --timeout=10000 -r tsconfig-paths/register -r node_modules/ts-node/register \"src/tests/**/*.test.ts\" -exit",
     "test:coverage": "nyc mocha --timeout=10000 -r tsconfig-paths/register -r node_modules/ts-node/register \"src/tests/**/*.test.ts\" -exit",
-    "gen:swag": "ts-node -r tsconfig-paths/register src/utils/swagger.util.ts"
+    "gen:swag": "ts-node -r tsconfig-paths/register src/utils/swagger.util.ts",
+    "postinstall": "patch-package"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/developerserasiautoraya/SELOG_LOGIS_ServiceOrder.git"
+    "url": "git+https://github.com/developerserasiautoraya/SELOG_WMS_ServiceMasterData.git"
   },
   "author": "SERA",
   "license": "ISC",
@@ -40,6 +41,7 @@
     "cors": "^2.8.5",
     "crypto-js": "^4.2.0",
     "ejs": "^3.1.10",
+    "exceljs": "^4.4.0",
     "express": "^5.2.1",
     "helmet": "^7.2.0",
     "inversify": "^6.2.2",
@@ -80,6 +82,7 @@
     "@types/passport": "^1.0.17",
     "@types/passport-jwt": "^4.0.1",
     "@types/supertest": "^6.0.2",
+    "@types/swagger-jsdoc": "^6.0.4",
     "@typescript-eslint/eslint-plugin": "^8.24.0",
     "@typescript-eslint/parser": "^8.24.0",
     "dotenv": "^16.4.7",
@@ -87,6 +90,7 @@
     "eslint": "^9.20.1",
     "jest": "^29.7.0",
     "nodemon": "^3.1.9",
+    "patch-package": "^8.0.1",
     "supertest": "^7.0.0",
     "ts-jest": "^29.4.6",
     "ts-node": "^10.9.2",
@@ -115,9 +119,9 @@
     "all": true
   },
   "bugs": {
-    "url": "https://github.com/developerserasiautoraya/SELOG_LOGIS_ServiceOrder/issues"
+    "url": "https://github.com/developerserasiautoraya/SELOG_WMS_ServiceMasterData/issues"
   },
-  "homepage": "https://github.com/developerserasiautoraya/SELOG_LOGIS_ServiceOrder#readme",
+  "homepage": "https://github.com/developerserasiautoraya/SELOG_WMS_ServiceMasterData#readme",
   "nodemonConfig": {
     "ignore": [
       "notes/*"

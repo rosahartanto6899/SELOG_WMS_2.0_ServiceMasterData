@@ -1,11 +1,13 @@
 import { inject, injectable } from 'inversify';
 import { Request } from 'express';
 import { Op, WhereOptions } from 'sequelize';
-import { customerContext, customerScope, upcaToDataUri } from '@/utils';
+import { NotFoundException } from '@/shared-libs/exceptions';
+import { customerScope, likeTerm, scopedCustomerCode, upcaToDataUri } from '@/utils';
+import { materialConstant as cst } from './constants/material.constant';
 import { MaterialRepository } from './repositories/material.repository';
 import { UpcaBarcodeRepository } from '@/features/v1/locations/repositories/location.repository';
 import { BarcodeLabelsBodyDto } from '@/features/v1/locations/dtos/location.dto';
-import { ListMaterialQueryDto } from './dtos/material.dto';
+import { ListMaterialQueryDto, MaterialDropdownQueryDto } from './dtos/material.dto';
 
 @injectable()
 export class MaterialsQueryService {
@@ -17,14 +19,13 @@ export class MaterialsQueryService {
   ) {}
 
   async list(query: ListMaterialQueryDto, req: Request) {
-    const { customerCode } = customerContext(req);
     const where: WhereOptions = {
-      ...customerScope(query.customerCode ?? customerCode),
+      ...customerScope(scopedCustomerCode(req, query.customerCode)),
       deletedDate: null,
       isActive: true,
     };
     if (query.search && query.searchBy) {
-      where[query.searchBy] = { [Op.like]: `%${query.search}%` };
+      Object.assign(where, { [query.searchBy]: { [Op.like]: likeTerm(query.search) } });
     }
 
     const page = query.page ?? 1;
@@ -53,10 +54,9 @@ export class MaterialsQueryService {
     };
   }
 
-  async dropdown(query: { customerCode?: string }, req: Request) {
-    const { customerCode } = customerContext(req);
+  async dropdown(query: MaterialDropdownQueryDto, req: Request) {
     const data = await this.repository.findAllActive(
-      query.customerCode ?? customerCode,
+      scopedCustomerCode(req, query.customerCode),
     );
     return { data, httpCode: 200 };
   }
@@ -73,8 +73,9 @@ export class MaterialsQueryService {
 
   async detail(id: string) {
     const material = await this.repository.getById(id);
+    if (!material) throw new NotFoundException(cst.messages.notFound);
     return {
-      data: material ? material.get({ plain: true }) : null,
+      data: material.get({ plain: true }),
       httpCode: 200,
     };
   }
