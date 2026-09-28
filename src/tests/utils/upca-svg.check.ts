@@ -15,9 +15,12 @@ assert(calculateUpcaChecksum('72527273070') === 6, 'checksum 72527273070 harus 6
 // 95 modul total, bar hitam barcode valid 036000291452 = 52 (dihitung manual)
 const svg = upcaToSvg('036000291452');
 assert((svg.match(/<rect [^>]*fill="#000"/g) ?? []).length === 52, 'jumlah bar hitam harus 52');
-assert((svg.match(/<text /g) ?? []).length === 12, '12 digit human-readable');
+assert(!svg.includes('<text '), 'tanpa digit human-readable (paritas IncludeLabel=false CoreApp)');
 
-// 11 digit input → checksum otomatis
-assert(upcaToSvg('03600029145').includes('2</text>'), 'check digit 2 dirender');
+// 11 digit input → checksum otomatis dihitung ulang → jumlah bar sama
+assert(
+  (upcaToSvg('03600029145').match(/<rect [^>]*fill="#000"/g) ?? []).length === 52,
+  'check digit otomatis → jumlah bar tetap 52',
+);
 
 console.log('upca-svg OK');
