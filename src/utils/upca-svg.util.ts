@@ -36,18 +36,21 @@ function encodeUpca(barcode: string): string {
   return modules;
 }
 
-/** SVG UPCA — dimension default 290x150 (paritas output CoreApp). */
+/** SVG UPCA — dimension default 290x150, bar hitam penuh TANPA digit
+ * human-readable (paritas output CoreApp: BarcodeLib 3.1.5 Encode
+ * IncludeLabel=false, margin default 10px segala sisi). */
 export function upcaToSvg(barcode: string, width = 290, height = 150): string {
   const clean = barcode.replace(/\D/g, '').slice(0, 11).padEnd(11, '0');
   const check = calculateUpcaChecksum(clean);
   const full = `${clean}${check}`;
   const modules = encodeUpca(full);
-  const moduleWidth = width / modules.length;
-  const barTop = 8;
-  const barHeight = height - 40;
+  const margin = 10;
+  const moduleWidth = (width - margin * 2) / modules.length;
+  const barTop = margin;
+  const barHeight = height - margin * 2;
 
   let bars = '';
-  let x = 0;
+  let x = margin;
   modules.split('').forEach((m) => {
     if (m === '1') {
       bars += `<rect x="${x.toFixed(2)}" y="${barTop}" width="${moduleWidth.toFixed(2)}" height="${barHeight}" fill="#000"/>`;
@@ -55,15 +58,7 @@ export function upcaToSvg(barcode: string, width = 290, height = 150): string {
     x += moduleWidth;
   });
 
-  const digitY = barTop + barHeight + 4;
-  const digitSize = Math.max(10, Math.floor(height / 12));
-  const digitW = width / 12;
-  const human = full
-    .split('')
-    .map((d, i) => `<text x="${(i * digitW + digitW / 2).toFixed(1)}" y="${digitY}" font-family="monospace" font-size="${digitSize}" text-anchor="middle" fill="#000">${d}</text>`)
-    .join('');
-
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><rect width="100%" height="100%" fill="#fff"/>${bars}${human}</svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><rect width="100%" height="100%" fill="#fff"/>${bars}</svg>`;
 }
 
 /** SVG → data URI base64 (siap dipakai <img src>). */
