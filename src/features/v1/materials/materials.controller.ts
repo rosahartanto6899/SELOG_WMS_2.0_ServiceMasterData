@@ -22,6 +22,7 @@ import { materialConstant as cst } from './constants/material.constant';
 import {
   CreateMaterialDto,
   ListMaterialQueryDto,
+  MaterialBarcodeParamDto,
   MaterialDropdownQueryDto,
   MaterialIdParamDto,
   UpdateMaterialDto,
@@ -217,6 +218,47 @@ export class MaterialsController extends BaseHttpController {
   )
   async barcodeLabels(@requestBody() body: BarcodeLabelsBodyDto) {
     return await this.queryService.barcodeLabels(body);
+  }
+
+  /**
+   * @swagger
+   * /v1/materials/by-barcode/{barcode}:
+   *   get:
+   *     summary: Resolve UPCA barcode to material (scan dari dashboard Stock Availability)
+   *     tags: [Materials]
+   *     security:
+   *       - bearerAuth: []
+   *       - api_key: []
+   *     parameters:
+   *       - in: path
+   *         name: barcode
+   *         required: true
+   *         schema: { type: string, pattern: '^\\d{11,12}$' }
+   *     responses:
+   *       200:
+   *         description: Material record (data null jika barcode tidak terdaftar)
+   *       401:
+   *         description: Unauthorized
+   *       422:
+   *         description: Validation errors
+   */
+  @ValidatePermissions({
+    allowedMenuPermissions: [
+      { menuCode: cst.menuCode, action: 'READ' },
+      // operator dashboard stock availability belum tentu punya akses master material
+      { menuCode: 'STOCK-AVAILABILITY', action: 'READ' },
+    ],
+  })
+  @httpGet(
+    '/by-barcode/:barcode',
+    ParamValidation(MaterialBarcodeParamDto),
+    MaterialsController.materialsLogging.custom('by-barcode'),
+  )
+  async byBarcode(
+    @requestParam('barcode') barcode: string,
+    @request() req: Request,
+  ) {
+    return await this.queryService.byBarcode(barcode, req);
   }
 
   /**

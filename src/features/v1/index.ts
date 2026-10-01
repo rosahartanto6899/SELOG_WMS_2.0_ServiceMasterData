@@ -1,3 +1,5 @@
+export * from '@/features/v1/health/health.controller';
+export * from '@/features/v1/health/query.service';
 export * from '@/features/v1/zones/zones.controller';
 export * from '@/features/v1/locations/locations.controller';
 export * from '@/features/v1/materials/materials.controller';

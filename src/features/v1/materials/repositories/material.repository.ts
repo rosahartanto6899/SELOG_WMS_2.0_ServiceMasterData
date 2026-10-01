@@ -48,6 +48,15 @@ export class MaterialRepository {
     return MstMaterial.findOne(options);
   }
 
+  public async getByBarcode(
+    barcode: string,
+    customerCode: string | undefined,
+  ) {
+    return MstMaterial.findOne({
+      where: { ...customerScope(customerCode), barcode, deletedDate: null },
+    });
+  }
+
   public async existsActiveMappingByMaterialId(
     materialId: string,
     transaction?: Transaction,
