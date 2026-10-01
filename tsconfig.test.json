@@ -4,6 +4,6 @@
     "types": ["jest", "node"],
     "noEmit": true
   },
-  "include": ["src/tests/**/*.test.ts"],
+  "include": ["src/tests/**/*.test.ts", "src/shared-libs/types/express.d.ts"],
   "exclude": ["node_modules", "dist"]
 }

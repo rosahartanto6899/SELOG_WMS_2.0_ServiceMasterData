@@ -80,6 +80,19 @@ export class MaterialsQueryService {
     };
   }
 
+  /** Resolve barcode → material (scan kamera dari dashboard Stock Availability).
+   *  data null jika barcode tidak terdaftar — frontend yang menampilkan pesan. */
+  async byBarcode(barcode: string, req: Request) {
+    const material = await this.repository.getByBarcode(
+      barcode,
+      scopedCustomerCode(req, undefined),
+    );
+    return {
+      data: material ? material.get({ plain: true }) : null,
+      httpCode: 200,
+    };
+  }
+
   async availableBarcodes() {
     const data = await this.upcaRepository.findAvailable('isMaterialUsed');
     return { data, httpCode: 200 };

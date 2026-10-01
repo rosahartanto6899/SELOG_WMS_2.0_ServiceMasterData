@@ -125,3 +125,8 @@ export class MaterialIdParamDto {
   // kolom DB uniqueidentifier — id non-UUID bikin MSSQL conversion error (500), bukan 404/422
   @IsUUID() id: string;
 }
+
+export class MaterialBarcodeParamDto {
+  // UPCA 12 digit, tapi 11–12 digit valid — jangan lebih ketat dari data
+  @IsString() @Matches(/^\d{11,12}$/) barcode: string;
+}

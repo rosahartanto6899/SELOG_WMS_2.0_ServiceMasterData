@@ -11,6 +11,8 @@ import { InversifyExpressServer } from 'inversify-express-utils';
 import { HandlerException } from '@/shared-libs/exceptions/handler.exception';
 import {
   VerifyJWT,
+  RateLimitMiddleware,
+  UserRateLimitMiddleware,
   ResponseJson,
   validateDataMiddleware,
   AuthorizeBranchScope,
@@ -29,7 +31,9 @@ export async function Bootstrap() {
     app.use(bodyParser.json());
     app.use(helmet());
     app.use(cors());
+    app.use(RateLimitMiddleware);
     app.use(VerifyJWT);
+    app.use(UserRateLimitMiddleware);
     app.use(validateDataMiddleware);
     app.use(AuthorizeBranchScope());
     app.use(ResponseJson);
